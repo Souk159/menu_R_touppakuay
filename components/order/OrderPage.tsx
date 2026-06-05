@@ -241,24 +241,22 @@ export default function OrderPage() {
     </div>
   )
 
-  if (!booth.isOpen) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #14532D 0%, #15803D 100%)' }}>
-      <div className="text-center text-white p-8">
-        <div className="text-7xl mb-5">🍃</div>
-        <p className="text-3xl font-bold mb-2">{booth.name}</p>
-        <p className="text-lg opacity-80">ຕູບ​ນີ້​ຍັງ​ປິດ​ຢູ່</p>
-        <p className="text-sm opacity-60 mt-2">ກະລຸນາ​ຖາມ​ພ​ນັກ​ງານ​ເພື່ອ​ເປີດ​ຕູບ</p>
-      </div>
-    </div>
-  )
+  const boothOpen = booth.isOpen
 
   return (
     <div className="min-h-screen bg-green-50 flex flex-col" style={{ fontFamily: 'Phetsarath OT, Phetsarath, sans-serif' }}>
       {/* ── Header ── */}
       <header style={{ background: 'linear-gradient(135deg, #14532D 0%, #15803D 60%, #16a34a 100%)' }} className="text-white px-4 pt-5 pb-4 flex-shrink-0">
-        <div className="max-w-2xl mx-auto">
-          <p className="text-green-300 text-xs font-medium tracking-wide mb-0.5">🌿 ສ/ແກ ເພື່ອ​ສັ່ງ​ອາ​ຫານ</p>
-          <h1 className="text-xl font-bold">{booth.name}</h1>
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div>
+            <p className="text-green-300 text-xs font-medium tracking-wide mb-0.5">🌿 ສ/ແກ ເພື່ອ​ສັ່ງ​ອາ​ຫານ</p>
+            <h1 className="text-xl font-bold">{booth.name}</h1>
+          </div>
+          {!boothOpen && (
+            <span className="bg-red-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-xl">
+              🔒 ຕູບ​ປິດ
+            </span>
+          )}
         </div>
       </header>
 
@@ -317,6 +315,19 @@ export default function OrderPage() {
             </nav>
           )}
 
+          {/* Closed banner */}
+          {!boothOpen && (
+            <div className="max-w-2xl mx-auto w-full px-3 pt-3">
+              <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                <span className="text-2xl">🔒</span>
+                <div>
+                  <p className="font-bold text-red-700 text-sm">ຕູບ​ນີ້​ປິດ​ຢູ່</p>
+                  <p className="text-xs text-red-500 mt-0.5">ເບິ່ງ​ເມ​ນູ​ໄດ້ ແຕ່​ສັ່ງ​ບໍ່​ໄດ້ — ກະ​ລຸ​ນາ​ຖາມ​ພ​ນັກ​ງານ</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Menu items */}
           <main className="max-w-2xl mx-auto w-full px-3 py-4 pb-36 flex-1">
             {categories.map((cat) => (
@@ -348,33 +359,35 @@ export default function OrderPage() {
                             {item.description && <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{item.description}</p>}
                             <p className="text-sm font-bold text-amber-700 mt-1">{fmt(item.price)}</p>
                           </div>
-                          <div className="flex justify-end mt-2">
-                            {inCart ? (
-                              <div className="flex items-center gap-1.5 bg-green-50 rounded-xl px-1.5 py-1">
-                                <button onClick={() => removeItem(item.id)}
-                                  className="w-8 h-8 rounded-lg bg-white shadow-sm text-green-700 font-bold text-lg leading-none flex items-center justify-center active:scale-95">−</button>
-                                {editingQtyId === item.id ? (
-                                  <input type="number" min={0} max={99} autoFocus defaultValue={inCart.quantity}
-                                    className="w-10 text-center text-sm font-bold text-green-900 bg-white rounded-lg border border-green-300 outline-none py-1"
-                                    onBlur={(e) => setItemQty(item.id, parseInt(e.target.value))}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') setItemQty(item.id, parseInt((e.target as HTMLInputElement).value))
-                                      if (e.key === 'Escape') setEditingQtyId(null)
-                                    }} />
-                                ) : (
-                                  <button onClick={() => setEditingQtyId(item.id)}
-                                    className="w-9 text-center text-sm font-bold text-green-900 bg-white rounded-lg py-1 border border-transparent hover:border-green-300 transition">
-                                    {inCart.quantity}
-                                  </button>
-                                )}
+                          {boothOpen && (
+                            <div className="flex justify-end mt-2">
+                              {inCart ? (
+                                <div className="flex items-center gap-1.5 bg-green-50 rounded-xl px-1.5 py-1">
+                                  <button onClick={() => removeItem(item.id)}
+                                    className="w-8 h-8 rounded-lg bg-white shadow-sm text-green-700 font-bold text-lg leading-none flex items-center justify-center active:scale-95">−</button>
+                                  {editingQtyId === item.id ? (
+                                    <input type="number" min={0} max={99} autoFocus defaultValue={inCart.quantity}
+                                      className="w-10 text-center text-sm font-bold text-green-900 bg-white rounded-lg border border-green-300 outline-none py-1"
+                                      onBlur={(e) => setItemQty(item.id, parseInt(e.target.value))}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') setItemQty(item.id, parseInt((e.target as HTMLInputElement).value))
+                                        if (e.key === 'Escape') setEditingQtyId(null)
+                                      }} />
+                                  ) : (
+                                    <button onClick={() => setEditingQtyId(item.id)}
+                                      className="w-9 text-center text-sm font-bold text-green-900 bg-white rounded-lg py-1 border border-transparent hover:border-green-300 transition">
+                                      {inCart.quantity}
+                                    </button>
+                                  )}
+                                  <button onClick={() => addItem(item)}
+                                    className="w-8 h-8 rounded-lg bg-green-600 text-white font-bold text-lg leading-none flex items-center justify-center active:scale-95">+</button>
+                                </div>
+                              ) : (
                                 <button onClick={() => addItem(item)}
-                                  className="w-8 h-8 rounded-lg bg-green-600 text-white font-bold text-lg leading-none flex items-center justify-center active:scale-95">+</button>
-                              </div>
-                            ) : (
-                              <button onClick={() => addItem(item)}
-                                className="w-10 h-10 rounded-xl bg-green-600 text-white font-bold text-2xl leading-none flex items-center justify-center shadow-sm hover:bg-green-700 active:scale-95 transition">+</button>
-                            )}
-                          </div>
+                                  className="w-10 h-10 rounded-xl bg-green-600 text-white font-bold text-2xl leading-none flex items-center justify-center shadow-sm hover:bg-green-700 active:scale-95 transition">+</button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )
@@ -385,7 +398,7 @@ export default function OrderPage() {
           </main>
 
           {/* Floating cart bar */}
-          {cartCount > 0 && !cartOpen && (
+          {boothOpen && cartCount > 0 && !cartOpen && (
             <div className="fixed bottom-4 left-4 right-4 z-40 max-w-2xl mx-auto">
               <button
                 onClick={() => setCartOpen(true)}
