@@ -99,12 +99,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <div className="mt-5 pt-4 border-t border-gray-100 text-center">
-          <p className="text-xs text-gray-400">ລະຫັດເລີ່ມຕົ້ນ</p>
-          <p className="text-xs font-mono text-gray-600 mt-0.5">admin / admin123</p>
-        </div>
-
-        <a href="/" className="block text-center text-xs text-green-600 hover:text-green-800 mt-3 transition">
+        <a href="/" className="block text-center text-xs text-green-600 hover:text-green-800 mt-5 transition">
           ← ກັບໄປໜ້າເມນູ
         </a>
       </div>
