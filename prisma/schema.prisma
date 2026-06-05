@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String     @default("")
+  orderNum    Int        @default(0)
+  items       MenuItem[]
+  createdAt   DateTime   @default(now())
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id          Int         @id @default(autoincrement())
+  categoryId  Int
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  description String      @default("")
+  price       Decimal     @db.Decimal(12, 2)
+  imageUrl    String      @default("")
+  isAvailable Boolean     @default(true)
+  orderNum    Int         @default(0)
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+
+  @@map("menu_items")
+}
+
+model Booth {
+  id       Int      @id @default(autoincrement())
+  name     String
+  isOpen   Boolean  @default(false)
+  orderNum Int      @default(0)
+  orders   Order[]
+  createdAt DateTime @default(now())
+
+  @@map("booths")
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  boothId       Int
+  booth         Booth       @relation(fields: [boothId], references: [id])
+  items         OrderItem[]
+  status        String      @default("pending")
+  totalAmount   Decimal     @db.Decimal(12, 2)
+  paymentMethod String?
+  paymentAmount Decimal?    @db.Decimal(12, 2)
+  note          String      @default("")
+  rejectReason  String      @default("")
+  createdAt     DateTime    @default(now())
+  paidAt        DateTime?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  itemName   String
+  itemPrice  Decimal  @db.Decimal(12, 2)
+  quantity   Int      @default(1)
+
+  @@map("order_items")
+}
+
+model Admin {
+  id           Int    @id @default(autoincrement())
+  username     String @unique
+  passwordHash String
+
+  @@map("admins")
+}
+
+model Setting {
+  key   String @id
+  value String @default("")
+
+  @@map("settings")
+}
