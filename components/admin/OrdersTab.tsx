@@ -46,6 +46,7 @@ export default function OrdersTab({ showToast }: Props) {
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [processing, setProcessing] = useState<number | null>(null)
   const [removingItem, setRemovingItem] = useState<number | null>(null)
+  const [editingQty, setEditingQty] = useState<{ orderId: number; itemId: number; value: string; original: number } | null>(null)
   const [rejectModal, setRejectModal] = useState<Order | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [viewMode, setViewMode] = useState<'status' | 'table'>('status')
@@ -167,6 +168,26 @@ export default function OrdersTab({ showToast }: Props) {
       showToast('ເກີດ​ຂໍ້​ຜິດ​ພາດ', 'error')
     } finally {
       setProcessing(null)
+    }
+  }
+
+  async function saveQty() {
+    if (!editingQty) return
+    const qty = parseInt(editingQty.value)
+    const curr = editingQty
+    setEditingQty(null)
+    if (!qty || qty < 1 || qty === curr.original) return
+    try {
+      const res = await fetch(`/api/admin/orders/${curr.orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'changeQty', orderItemId: curr.itemId, quantity: qty }),
+      })
+      if (!res.ok) throw new Error()
+      showToast(`ປ່ຽນ​ຈຳ​ນວນ​ເປັນ ${qty} ແລ້ວ`, 'success')
+      loadOrders(true)
+    } catch {
+      showToast('ເກີດ​ຂໍ້​ຜິດ​ພາດ', 'error')
     }
   }
 
@@ -347,7 +368,26 @@ export default function OrdersTab({ showToast }: Props) {
                         <div className="space-y-0.5 mb-2">
                           {order.items.map((item) => (
                             <div key={item.id} className="flex items-center gap-2 text-sm">
-                              <span className="text-gray-700 flex-1 min-w-0">{item.itemName} <span className="text-gray-400">× {item.quantity}</span></span>
+                              <span className="text-gray-700 flex-1 min-w-0">
+                                {item.itemName}{' '}
+                                {(isPending || isConfirmed) && editingQty?.itemId === item.id ? (
+                                  <input
+                                    type="number" min={1} max={99} autoFocus
+                                    value={editingQty.value}
+                                    onChange={(e) => setEditingQty((p) => p ? { ...p, value: e.target.value } : p)}
+                                    onBlur={saveQty}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') saveQty(); if (e.key === 'Escape') setEditingQty(null) }}
+                                    className="w-10 text-center text-xs font-bold text-green-900 bg-green-50 rounded border border-green-400 outline-none py-0.5"
+                                  />
+                                ) : (
+                                  <span
+                                    className={`${(isPending || isConfirmed) ? 'text-green-700 bg-green-50 rounded px-1 cursor-pointer hover:bg-green-100' : 'text-gray-400'}`}
+                                    onClick={() => (isPending || isConfirmed) && setEditingQty({ orderId: order.id, itemId: item.id, value: String(item.quantity), original: item.quantity })}
+                                  >
+                                    × {item.quantity}
+                                  </span>
+                                )}
+                              </span>
                               <span className="text-gray-500 text-xs flex-shrink-0">{fmt(item.itemPrice * item.quantity)} ກີບ</span>
                               {(isPending || isConfirmed) && (
                                 <button
@@ -460,7 +500,24 @@ export default function OrdersTab({ showToast }: Props) {
                     <div key={item.id} className="flex items-center justify-between text-sm gap-2">
                       <span className="text-gray-700 flex-1 min-w-0">
                         <span className="font-medium">{item.itemName}</span>
-                        <span className="text-gray-400 ml-1">× {item.quantity}</span>
+                        {(isPending || isConfirmed) && editingQty?.itemId === item.id ? (
+                          <input
+                            type="number" min={1} max={99} autoFocus
+                            value={editingQty.value}
+                            onChange={(e) => setEditingQty((p) => p ? { ...p, value: e.target.value } : p)}
+                            onBlur={saveQty}
+                            onKeyDown={(e) => { if (e.key === 'Enter') saveQty(); if (e.key === 'Escape') setEditingQty(null) }}
+                            className="ml-1 w-10 text-center text-xs font-bold text-green-900 bg-green-50 rounded border border-green-400 outline-none py-0.5"
+                          />
+                        ) : (
+                          <span
+                            className={`ml-1 ${(isPending || isConfirmed) ? 'text-green-700 bg-green-50 rounded px-1 cursor-pointer hover:bg-green-100' : 'text-gray-400'}`}
+                            onClick={() => (isPending || isConfirmed) && setEditingQty({ orderId: order.id, itemId: item.id, value: String(item.quantity), original: item.quantity })}
+                            title={(isPending || isConfirmed) ? 'ກົດ​ເພື່ອ​ແກ້​ໄຂ​ຈຳ​ນວນ' : undefined}
+                          >
+                            × {item.quantity}
+                          </span>
+                        )}
                       </span>
                       <span className="text-gray-600 text-xs flex-shrink-0">{fmt(item.itemPrice * item.quantity)} ກີບ</span>
                       {(isPending || isConfirmed) && (

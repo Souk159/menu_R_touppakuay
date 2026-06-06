@@ -56,6 +56,44 @@ export async function PATCH(request: Request, { params }: Params) {
     })
   }
 
+  // Change quantity of one item
+  if (body.action === 'changeQty') {
+    const { orderItemId, quantity } = body as { orderItemId: number; quantity: number }
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      return NextResponse.json({ error: 'ຈຳ​ນວນ​ຕ້ອງ​ຢ່າງ​ໜ້ອຍ 1' }, { status: 400 })
+    }
+
+    const order = await prisma.order.findUnique({ where: { id }, include: { items: true } })
+    if (!order) return NextResponse.json({ error: 'ບໍ່ພົບ order' }, { status: 404 })
+    if (order.status !== 'pending' && order.status !== 'confirmed') {
+      return NextResponse.json({ error: 'ດັດ​ແກ້​ໄດ້​ສະ​ເພາະ​ຄຳ​ສັ່ງ​ທີ່​ລໍ​ຖ້າ​ຫຼື​ກຳ​ລັງ​ກຽມ' }, { status: 400 })
+    }
+
+    const item = order.items.find((i) => i.id === orderItemId)
+    if (!item) return NextResponse.json({ error: 'ບໍ່ພົບ​ລາຍ​ການ' }, { status: 404 })
+
+    await prisma.orderItem.update({ where: { id: orderItemId }, data: { quantity } })
+
+    const updatedItems = order.items.map((i) => i.id === orderItemId ? { ...i, quantity } : i)
+    const newTotal = updatedItems.reduce((s, i) => s + Number(i.itemPrice) * i.quantity, 0)
+
+    const modNote = `ດັດ​ແກ້: "${item.itemName}" ${item.quantity} → ${quantity}`
+    const newRejectReason = order.status === 'confirmed'
+      ? (order.rejectReason ? `${order.rejectReason}; ${modNote}` : modNote)
+      : order.rejectReason
+
+    const updated = await prisma.order.update({
+      where: { id },
+      data: { totalAmount: newTotal, ...(newRejectReason !== order.rejectReason ? { rejectReason: newRejectReason } : {}) },
+      include: { items: true, booth: { select: { name: true } } },
+    })
+    return NextResponse.json({
+      ...updated,
+      totalAmount: newTotal,
+      items: updated.items.map((i) => ({ ...i, itemPrice: Number(i.itemPrice) })),
+    })
+  }
+
   // Change order status
   const { status, rejectReason } = body
   if (!['confirmed', 'rejected', 'served'].includes(status)) {

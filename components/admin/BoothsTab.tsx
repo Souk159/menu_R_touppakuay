@@ -67,6 +67,7 @@ export default function BoothsTab({ showToast }: Props) {
   const [rejectingId, setRejectingId] = useState<number | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [removingItem, setRemovingItem] = useState<number | null>(null)
+  const [editingDrawerQty, setEditingDrawerQty] = useState<{ orderId: number; itemId: number; value: string; original: number } | null>(null)
 
   const loadBooths = useCallback(async () => {
     const res = await fetch('/api/admin/booths')
@@ -100,6 +101,26 @@ export default function BoothsTab({ showToast }: Props) {
     const res = await fetch(`/api/order/${historyBooth.id}/history`)
     if (res.ok) setHistoryOrders(await res.json())
     loadBooths()
+  }
+
+  async function saveDrawerQty() {
+    if (!editingDrawerQty) return
+    const qty = parseInt(editingDrawerQty.value)
+    const curr = editingDrawerQty
+    setEditingDrawerQty(null)
+    if (!qty || qty < 1 || qty === curr.original) return
+    try {
+      const res = await fetch(`/api/admin/orders/${curr.orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'changeQty', orderItemId: curr.itemId, quantity: qty }),
+      })
+      if (!res.ok) throw new Error()
+      showToast(`ປ່ຽນ​ຈຳ​ນວນ​ເປັນ ${qty} ແລ້ວ`, 'success')
+      await reloadHistory()
+    } catch {
+      showToast('ເກີດ​ຂໍ້​ຜິດ​ພາດ', 'error')
+    }
   }
 
   async function removeDrawerItem(orderId: number, orderItemId: number, itemName: string) {
@@ -481,7 +502,24 @@ export default function BoothsTab({ showToast }: Props) {
                             <div key={i} className="flex items-center gap-2 text-sm">
                               <span className="text-gray-700 flex-1">
                                 {item.name}
-                                <span className="text-gray-400 ml-1">× {item.quantity}</span>
+                                {(order.status === 'pending' || order.status === 'confirmed') && item.id && editingDrawerQty?.itemId === item.id ? (
+                                  <input
+                                    type="number" min={1} max={99} autoFocus
+                                    value={editingDrawerQty.value}
+                                    onChange={(e) => setEditingDrawerQty((p) => p ? { ...p, value: e.target.value } : p)}
+                                    onBlur={saveDrawerQty}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') saveDrawerQty(); if (e.key === 'Escape') setEditingDrawerQty(null) }}
+                                    className="ml-1 w-10 text-center text-xs font-bold text-green-900 bg-green-50 rounded border border-green-400 outline-none py-0.5"
+                                  />
+                                ) : (
+                                  <span
+                                    className={`ml-1 ${(order.status === 'pending' || order.status === 'confirmed') && item.id ? 'text-green-700 bg-green-50 rounded px-1 cursor-pointer hover:bg-green-100' : 'text-gray-400'}`}
+                                    onClick={() => (order.status === 'pending' || order.status === 'confirmed') && item.id && setEditingDrawerQty({ orderId: order.id, itemId: item.id, value: String(item.quantity), original: item.quantity })}
+                                    title={(order.status === 'pending' || order.status === 'confirmed') ? 'ກົດ​ເພື່ອ​ແກ້​ໄຂ​ຈຳ​ນວນ' : undefined}
+                                  >
+                                    × {item.quantity}
+                                  </span>
+                                )}
                               </span>
                               <span className="text-gray-500 text-xs flex-shrink-0">{fmt(item.price * item.quantity)} ກີບ</span>
                               {(order.status === 'pending' || order.status === 'confirmed') && item.id && (
