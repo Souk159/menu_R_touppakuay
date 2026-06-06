@@ -61,6 +61,7 @@ export default function OrderPage() {
   const [cancelling, setCancelling] = useState<number | null>(null)
   const [billRequested, setBillRequested] = useState(false)
   const [requestingBill, setRequestingBill] = useState(false)
+  const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     fetch(`/api/order/${boothId}`)
@@ -346,9 +347,10 @@ export default function OrderPage() {
                     const inCart = cart.find((c) => c.menuItemId === item.id)
                     return (
                       <div key={item.id} className="bg-white rounded-2xl overflow-hidden flex shadow-sm border border-green-50">
-                        {item.imageUrl ? (
+                        {item.imageUrl && !brokenImages.has(item.id) ? (
                           <div className="w-24 h-24 flex-shrink-0 relative overflow-hidden">
-                            <Image src={item.imageUrl} alt={item.name} fill sizes="96px" className="object-cover" />
+                            <Image src={item.imageUrl} alt={item.name} fill sizes="96px" className="object-cover"
+                              onError={() => setBrokenImages((prev) => new Set([...prev, item.id]))} />
                           </div>
                         ) : (
                           <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center bg-green-50 text-2xl">🍜</div>

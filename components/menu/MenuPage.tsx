@@ -32,6 +32,7 @@ export default function MenuPage({ categories, settings }: Props) {
   const [activeId, setActiveId] = useState<number>(categories[0]?.id ?? 0)
   const sectionRefs = useRef<Map<number, HTMLElement>>(new Map())
   const tabRefs = useRef<Map<number, HTMLButtonElement>>(new Map())
+  const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     if (settings.name) document.title = settings.name
@@ -166,13 +167,14 @@ export default function MenuPage({ categories, settings }: Props) {
                     >
                       {/* Image */}
                       <div className="relative aspect-[4/3] overflow-hidden bg-amber-50">
-                        {item.imageUrl ? (
+                        {item.imageUrl && !brokenImages.has(item.id) ? (
                           <Image
                             src={item.imageUrl}
                             alt={item.name}
                             fill
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                             className="object-cover transition-transform duration-300 hover:scale-105"
+                            onError={() => setBrokenImages((prev) => new Set([...prev, item.id]))}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-amber-50 to-orange-100">

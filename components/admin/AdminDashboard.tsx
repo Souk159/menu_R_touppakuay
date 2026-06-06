@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [items, setItems] = useState<MenuItem[]>([])
   const [filterCat, setFilterCat] = useState<number | ''>('')
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set())
 
   // Modals
   const [itemModal, setItemModal] = useState<{ open: boolean; item: MenuItem | null }>({ open: false, item: null })
@@ -240,13 +241,14 @@ export default function AdminDashboard() {
                   >
                     {/* Image */}
                     <div className="relative aspect-[16/9] bg-gray-50 overflow-hidden">
-                      {item.imageUrl ? (
+                      {item.imageUrl && !brokenImages.has(item.id) ? (
                         <Image
                           src={item.imageUrl}
                           alt={item.name}
                           fill
                           sizes="(max-width: 640px) 50vw, 33vw"
                           className="object-cover"
+                          onError={() => setBrokenImages((prev) => new Set([...prev, item.id]))}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-3xl bg-amber-50 text-gray-400">
