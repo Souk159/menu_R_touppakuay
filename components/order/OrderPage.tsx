@@ -525,7 +525,7 @@ export default function OrderPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{cfg.icon}</span>
                         <div>
-                          <p className="font-bold text-gray-800 text-sm">ຄຳ​ສັ່ງ #{ord.id}</p>
+                          <p className="font-bold text-gray-800 text-sm">ຄຳ​ສັ່ງ</p>
                           <p className={`text-xs font-semibold ${cfg.text}`}>{cfg.label}</p>
                         </div>
                       </div>
