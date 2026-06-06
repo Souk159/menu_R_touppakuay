@@ -349,7 +349,7 @@ export default function OrdersTab({ showToast }: Props) {
                             <div key={item.id} className="flex items-center gap-2 text-sm">
                               <span className="text-gray-700 flex-1 min-w-0">{item.itemName} <span className="text-gray-400">× {item.quantity}</span></span>
                               <span className="text-gray-500 text-xs flex-shrink-0">{fmt(item.itemPrice * item.quantity)} ກີບ</span>
-                              {isPending && (
+                              {(isPending || isConfirmed) && (
                                 <button
                                   onClick={() => removeOrderItem(order.id, item.id, item.itemName)}
                                   disabled={removingItem === item.id}
@@ -453,7 +453,7 @@ export default function OrdersTab({ showToast }: Props) {
 
                 {/* Items */}
                 <div className="px-4 py-3 space-y-1.5">
-                  {isPending && (
+                  {(isPending || isConfirmed) && (
                     <p className="text-xs text-gray-400 mb-1">ກົດ × ໜ້າ​ລາຍ​ການ​ໃດ​ເພື່ອ​ລຶບ​ອອກ</p>
                   )}
                   {order.items.map((item) => (
@@ -463,7 +463,7 @@ export default function OrdersTab({ showToast }: Props) {
                         <span className="text-gray-400 ml-1">× {item.quantity}</span>
                       </span>
                       <span className="text-gray-600 text-xs flex-shrink-0">{fmt(item.itemPrice * item.quantity)} ກີບ</span>
-                      {isPending && (
+                      {(isPending || isConfirmed) && (
                         <button
                           onClick={() => removeOrderItem(order.id, item.id, item.itemName)}
                           disabled={removingItem === item.id}

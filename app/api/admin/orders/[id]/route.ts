@@ -17,10 +17,11 @@ export async function PATCH(request: Request, { params }: Params) {
       include: { items: true },
     })
     if (!order) return NextResponse.json({ error: 'ບໍ່ພົບ order' }, { status: 404 })
-    if (order.status !== 'pending') {
-      return NextResponse.json({ error: 'ລຶບ​ໄດ້​ສະ​ເພາະ​ຄຳ​ສັ່ງ​ທີ່​ລໍ​ຖ້າ' }, { status: 400 })
+    if (order.status !== 'pending' && order.status !== 'confirmed') {
+      return NextResponse.json({ error: 'ລຶບ​ໄດ້​ສະ​ເພາະ​ຄຳ​ສັ່ງ​ທີ່​ລໍ​ຖ້າ​ຫຼື​ກຳ​ລັງ​ກຽມ' }, { status: 400 })
     }
 
+    const removedItem = order.items.find((i) => i.id === orderItemId)
     await prisma.orderItem.delete({ where: { id: orderItemId } })
 
     const remaining = order.items.filter((i) => i.id !== orderItemId)
@@ -36,9 +37,16 @@ export async function PATCH(request: Request, { params }: Params) {
     }
 
     const newTotal = remaining.reduce((s, i) => s + Number(i.itemPrice) * i.quantity, 0)
+
+    // For confirmed orders, record what was removed so the customer can see
+    const modNote = removedItem ? `ດັດ​ແກ້: ລຶບ "${removedItem.itemName}" ອອກ` : null
+    const newRejectReason = order.status === 'confirmed' && modNote
+      ? (order.rejectReason ? `${order.rejectReason}; ${modNote}` : modNote)
+      : order.rejectReason
+
     const updated = await prisma.order.update({
       where: { id },
-      data: { totalAmount: newTotal },
+      data: { totalAmount: newTotal, ...(newRejectReason !== order.rejectReason ? { rejectReason: newRejectReason } : {}) },
       include: { items: true, booth: { select: { name: true } } },
     })
     return NextResponse.json({

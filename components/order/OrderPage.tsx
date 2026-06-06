@@ -563,9 +563,11 @@ export default function OrderPage() {
                       </div>
                     )}
 
-                    {/* Reject reason */}
+                    {/* Reject reason / admin modification notice */}
                     {ord.status?.rejectReason && (
-                      <div className="mx-4 mb-3 bg-red-50 rounded-xl px-3 py-2 text-xs text-red-600">
+                      <div className={`mx-4 mb-3 rounded-xl px-3 py-2 text-xs ${
+                        st === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'
+                      }`}>
                         ⚠️ {ord.status.rejectReason}
                       </div>
                     )}

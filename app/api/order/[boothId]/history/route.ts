@@ -51,6 +51,7 @@ export async function GET(_: Request, { params }: Params) {
       rejectReason: o.rejectReason,
       createdAt: o.createdAt,
       items: o.items.map((i) => ({
+        id: i.id,
         name: i.itemName,
         price: Number(i.itemPrice),
         quantity: i.quantity,

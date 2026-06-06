@@ -17,7 +17,7 @@ interface Booth {
   billRequested: boolean
 }
 
-interface OrderItem { name: string; price: number; quantity: number }
+interface OrderItem { id?: number; name: string; price: number; quantity: number }
 interface BoothOrder {
   id: number
   status: string
@@ -66,6 +66,7 @@ export default function BoothsTab({ showToast }: Props) {
   const [processingOrder, setProcessingOrder] = useState<number | null>(null)
   const [rejectingId, setRejectingId] = useState<number | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [removingItem, setRemovingItem] = useState<number | null>(null)
 
   const loadBooths = useCallback(async () => {
     const res = await fetch('/api/admin/booths')
@@ -96,9 +97,27 @@ export default function BoothsTab({ showToast }: Props) {
 
   async function reloadHistory() {
     if (!historyBooth) return
-    const res = await fetch(`/api/admin/orders?boothId=${historyBooth.id}`)
+    const res = await fetch(`/api/order/${historyBooth.id}/history`)
     if (res.ok) setHistoryOrders(await res.json())
     loadBooths()
+  }
+
+  async function removeDrawerItem(orderId: number, orderItemId: number, itemName: string) {
+    setRemovingItem(orderItemId)
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'removeItem', orderItemId }),
+      })
+      if (!res.ok) throw new Error()
+      showToast(`ລຶບ "${itemName}" ອອກຈາກ #${orderId} ແລ້ວ`, 'success')
+      await reloadHistory()
+    } catch {
+      showToast('ເກີດ​ຂໍ້​ຜິດ​ພາດ', 'error')
+    } finally {
+      setRemovingItem(null)
+    }
   }
 
   async function confirmOrder(id: number) {
@@ -455,13 +474,25 @@ export default function BoothsTab({ showToast }: Props) {
 
                         {/* Items */}
                         <div className="space-y-0.5 mb-2">
+                          {(order.status === 'pending' || order.status === 'confirmed') && (
+                            <p className="text-xs text-gray-400 mb-1">ກົດ × ເພື່ອ​ລຶບ​ລາຍ​ການ​ອອກ</p>
+                          )}
                           {order.items.map((item, i) => (
-                            <div key={i} className="flex justify-between text-sm">
-                              <span className="text-gray-700">
+                            <div key={i} className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-700 flex-1">
                                 {item.name}
                                 <span className="text-gray-400 ml-1">× {item.quantity}</span>
                               </span>
-                              <span className="text-gray-500 text-xs">{fmt(item.price * item.quantity)} ກີບ</span>
+                              <span className="text-gray-500 text-xs flex-shrink-0">{fmt(item.price * item.quantity)} ກີບ</span>
+                              {(order.status === 'pending' || order.status === 'confirmed') && item.id && (
+                                <button
+                                  onClick={() => removeDrawerItem(order.id, item.id!, item.name)}
+                                  disabled={removingItem === item.id}
+                                  className="flex-shrink-0 w-5 h-5 rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white text-xs font-bold flex items-center justify-center transition disabled:opacity-40"
+                                >
+                                  {removingItem === item.id ? '·' : '×'}
+                                </button>
+                              )}
                             </div>
                           ))}
                         </div>

@@ -80,7 +80,6 @@ export default function MenuPage({ categories, settings }: Props) {
           }}
         />
         <div className="relative z-10 text-center px-4 py-14 md:py-20">
-          <div className="text-5xl md:text-6xl mb-4">🌿🍌🌿</div>
           <h1
             className="text-3xl md:text-5xl font-bold tracking-wide drop-shadow-lg"
             style={{ fontFamily: 'Phetsarath OT, Phetsarath, serif' }}
